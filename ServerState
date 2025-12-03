@@ -1,0 +1,15 @@
+import audio_reader as AR
+
+class ServerState:
+    def __init__(self):
+        self.queue = []
+
+    def add_song(self, url, position=-1):
+        pos = len(self.queue) if position == -1 else position
+        self.queue.insert(url, pos)
+
+    def delete_song(self, position):
+        self.queue.remove(position)
+
+    def play_next():
+        pass
