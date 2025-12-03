@@ -3,7 +3,7 @@ from discord.ext import commands
 import logging
 from dotenv import load_dotenv
 import os
-import audio_reader as AR
+import server_state
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -14,6 +14,12 @@ intents.message_content = True
 intents.members = True
 
 bot = commands.Bot(command_prefix='?', intents=intents)
+
+states = {}
+def get_state(guild_id):
+    if guild_id not in states:
+        states[guild_id] = server_state.ServerState()
+    return states[guild_id]
 
 @bot.event
 async def on_ready():
@@ -31,22 +37,16 @@ async def on_message(message):
     await bot.process_commands(message)
 
 @bot.command(pass_context = True)
-async def play(ctx, url):
+async def play(ctx, url, position=-1):
     if(ctx.author.voice):
         voice_ch = ctx.message.author.voice.channel
-        vc = await voice_ch.connect()
+        if not ctx.voice_client:
+            await voice_ch.connect()
+        state = get_state(ctx.guild.id)
+        state.add_song(url, position)
+        if not state.isPlaying:
+            state.play_next(ctx)
         
-        stream_url = AR.play_music(url)
-        if stream_url is None:
-           pass
-         
-        ffmpeg_options = {
-        'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-        'options': '-vn'
-        }
-        source = discord.FFmpegPCMAudio(stream_url, **ffmpeg_options)
-    
-        ctx.voice_client.play(source)
 
 @bot.command(pass_context = True)
 async def stop(ctx):
