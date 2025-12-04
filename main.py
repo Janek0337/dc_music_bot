@@ -37,7 +37,7 @@ async def on_message(message):
     
     await bot.process_commands(message)
 
-@bot.command(pass_context = True)
+@bot.command()
 async def play(ctx, url, position=-1):
     if(ctx.author.voice):
         voice_ch = ctx.message.author.voice.channel
@@ -48,9 +48,14 @@ async def play(ctx, url, position=-1):
         if not state.isPlaying:
             await state.play_next(ctx)
 
-@bot.command(pass_context = True)
+@bot.command()
 async def stop(ctx):
     if(ctx.voice_client):
         await ctx.guild.voice_client.disconnect()
+
+@bot.command(name='queue')
+async def list_songs(ctx):
+    state = get_state(ctx)
+    await state.list_songs()
 
 bot.run(token=token, log_handler=handler)
