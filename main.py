@@ -16,10 +16,11 @@ intents.members = True
 bot = commands.Bot(command_prefix='?', intents=intents)
 
 states = {}
-def get_state(guild_id):
-    if guild_id not in states:
-        states[guild_id] = server_state.ServerState()
-    return states[guild_id]
+def get_state(ctx):
+    gid = ctx.guild.id
+    if gid not in states:
+        states[gid] = server_state.ServerState(bot, ctx)
+    return states[gid]
 
 @bot.event
 async def on_ready():
@@ -42,11 +43,10 @@ async def play(ctx, url, position=-1):
         voice_ch = ctx.message.author.voice.channel
         if not ctx.voice_client:
             await voice_ch.connect()
-        state = get_state(ctx.guild.id)
-        state.add_song(url, position)
+        state = get_state(ctx)
+        await state.add_song(url, position)
         if not state.isPlaying:
-            state.play_next(ctx)
-        
+            await state.play_next(ctx)
 
 @bot.command(pass_context = True)
 async def stop(ctx):
