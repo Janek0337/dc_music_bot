@@ -22,14 +22,16 @@ class ServerState:
         self.isPlaying = True
         if self.queue:
             url = self.queue.pop(0)
-            stream_url = AR.play_music(url)
+            result = AR.play_music(url)
+            stream_url = result[0]
+            name = result[1]
             if stream_url is not None:
                 ffmpeg_options = {
                 'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
                 'options': '-vn'
                 }
                 source = discord.FFmpegPCMAudio(stream_url, **ffmpeg_options)
-                self.bot.loop.create_task(self.ctx.send(f"Playing now: {url}"))
+                self.bot.loop.create_task(self.ctx.send(f"**Playing now: {name}**"))
                 ctx.voice_client.play(source, after=lambda e: self.bot.loop.create_task(self.play_next(ctx)))
             else:
                 print("Zły link")

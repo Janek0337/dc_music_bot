@@ -1,12 +1,25 @@
-import subprocess
+import yt_dlp
 
 def play_music(url):
-    cmd_get_url = ["yt-dlp", "-g",  "-f", "bestaudio", "--extractor-args", "youtube:player_client=default", url]
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'quiet': True,
+        'default_search': 'auto',
+        'source_address': '0.0.0.0'
+    }
 
-    try:
-        process = subprocess.run(cmd_get_url, stdout=subprocess.PIPE, text=True, check=True)
-        audio_url = process.stdout.strip()
-        return audio_url
-    except subprocess.CalledProcessError:
-        print("Błąd pobierania URL")
-        return None
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            info = ydl.extract_info(url, download=False)
+            
+            if 'entries' in info:
+                info = info['entries'][0]
+
+            stream_url = info['url'] 
+            title = info['title']
+            
+            return stream_url, title
+            
+        except Exception as e:
+            print(f"Błąd podczas pobierania strumienia: {e}")
+            return None, None
