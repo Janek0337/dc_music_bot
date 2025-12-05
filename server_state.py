@@ -8,29 +8,24 @@ class ServerState:
         self.bot = bot
         self.ctx = ctx
 
-    async def add_song(self, url, position=-1):
-        pos = len(self.queue) if position == -1 else position
+    async def add_song(self, url, index):
         song_info = await self.bot.loop.run_in_executor(None, lambda: AR.play_music(url))
         if song_info is None:
             await self.send_message("Cannot get information about given data")
             return
-        self.queue.insert(pos, song_info)
-        await self.send_message(f"Added to queue: {song_info[1]} at position {pos}.")
+        self.queue.insert(index, song_info)
+        await self.send_message(f"Added to queue: {song_info[1]} at position {index+1}.")
 
     async def delete_song(self, position):
-        self.queue.remove(position)
         await self.send_message(f"Removed: {self.queue[position][1]}")
+        self.queue.pop(position)
 
     async def list_songs(self):
-        if not self.queue:
-            await self.send_message("Empty queue")
-            return
         message = "Current queue:\n"
         for i, song in enumerate(self.queue):
-            message += f"{i}. {song[1]}\n"
+            message += f"{i+1}. {song[1]}\n"
         await self.send_message(message)
         
-    
     async def send_message(self, message):
         await self.ctx.send(message)
 
@@ -52,4 +47,4 @@ class ServerState:
                 print("Zły link")
         else:
             self.isPlaying = False
-            await self.send_message("**End of the queue**")
+            await self.send_message("**The end of the queue**")

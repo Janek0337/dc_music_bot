@@ -5,7 +5,8 @@ def play_music(url):
         'format': 'bestaudio/best',
         'quiet': True,
         'default_search': 'auto',
-        'source_address': '0.0.0.0'
+        'source_address': '0.0.0.0',
+        'no_warnings' : True
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
