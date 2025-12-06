@@ -4,6 +4,7 @@ import logging
 from dotenv import load_dotenv
 import os
 import server_state
+import math
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -69,12 +70,21 @@ async def stop(ctx):
         await ctx.guild.voice_client.disconnect()
 
 @bot.command(pass_context = True, name='queue')
-async def list_songs(ctx):
+async def list_songs(ctx, page=1):
     state = get_state(ctx)
     if len(state.queue) < 1:
         await ctx.send("Empty queue")
         return
-    await state.list_songs()
+    try:
+        page = int(page)
+        pages_count = math.ceil(len(state.queue) / 10)
+        
+        if page < 1 or page > pages_count:
+            raise ValueError
+    except ValueError:
+        await ctx.send(f'\"{page}\" is not a valid page number')
+        return
+    await state.list_songs(page-1, pages_count)
 
 @bot.command(pass_context = True)
 async def skip(ctx):
@@ -105,5 +115,19 @@ async def remove(ctx, position=0):
         await ctx.send(f'\"{position}\" is not a valid integer')
         return
     await state.delete_song(new_position)
+
+@bot.command(pass_context = True)
+async def move(ctx, pos_from=None, pos_to=None):
+    state = get_state(ctx)
+    qlen = len(state.queue)
+    try:
+        pos_from_int = int(pos_from)
+        pos_to_int = int(pos_to)
+        if not (0 < pos_from_int < qlen) or not (0 < pos_to_int < qlen):
+            raise ValueError
+    except ValueError:
+        await ctx.send(f'\"{pos_from}\" or \"{pos_to}\" is not a valid integer')
+        return
+    await state.move(pos_from_int-1, pos_to_int-1)
 
 bot.run(token=token, log_handler=handler)

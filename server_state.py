@@ -1,5 +1,6 @@
 import audio_reader as AR
 import discord
+import math
 
 class ServerState:
     def __init__(self, bot, ctx):
@@ -14,16 +15,21 @@ class ServerState:
             await self.send_message("Cannot get information about given data")
             return
         self.queue.insert(index, song_info)
-        await self.send_message(f"Added to queue: {song_info[1]} at position {index+1}.")
+        await self.send_message(f"Added to queue: **\"{song_info[1]}\"** at position **{index+1}**")
 
     async def delete_song(self, position):
-        await self.send_message(f"Removed: {self.queue[position][1]}")
+        await self.send_message(f"Removed: **\"{self.queue[position][1]}\"**")
         self.queue.pop(position)
 
-    async def list_songs(self):
-        message = "Current queue:\n"
-        for i, song in enumerate(self.queue):
-            message += f"{i+1}. {song[1]}\n"
+    async def list_songs(self, page, pages_count):
+        start_idx = page*10
+        end_idx = page*10 + 10
+        
+        page_songs = self.queue[start_idx:end_idx]
+
+        message = f"Current queue (page {page+1}/{pages_count}):\n"
+        for i, song in enumerate(page_songs, start=start_idx+1):
+            message += f"{i}. {song[1]}\n"
         await self.send_message(message)
         
     async def send_message(self, message):
@@ -48,3 +54,7 @@ class ServerState:
         else:
             self.isPlaying = False
             await self.send_message("**The end of the queue**")
+
+    async def move(self, pos_from, pos_to):
+        await self.send_message(f"Moving **\"{self.queue[pos_from][1]}\"** to position **{pos_to+1}**")
+        self.queue.insert(pos_to, self.queue.pop(pos_from))
