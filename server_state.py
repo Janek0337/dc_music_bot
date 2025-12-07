@@ -1,6 +1,5 @@
 import audio_reader as AR
 import discord
-import math
 
 class ServerState:
     def __init__(self, bot, ctx):

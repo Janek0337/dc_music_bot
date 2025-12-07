@@ -14,7 +14,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 command_character = '?'
-bot = commands.Bot(command_prefix=command_character, intents=intents)
+bot = commands.Bot(command_prefix=command_character, intents=intents, help_command=None)
 
 states = {}
 def get_state(ctx):
@@ -25,7 +25,9 @@ def get_state(ctx):
 
 @bot.event
 async def on_ready():
-    print("Siema eniu")
+    print("=====================")
+    print("= BOT IS NOW ONLINE =")
+    print("=====================")
 
 @bot.event
 async def on_message(message):
@@ -37,6 +39,14 @@ async def on_message(message):
         await message.channel.send(f"{message.author.mention} był niegrzeczny :v")
     
     await bot.process_commands(message)
+
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send(f"Unknown command: **{ctx.invoked_with}**")
+        await ctx.send(f"Use **{bot.command_prefix}help** to get more info about commands")
+    else:
+        if isinstance(error, commands.PrivateMessageOnly):
+            return
 
 @bot.command(pass_context = True)
 async def play(ctx, url=None, position=0):
@@ -67,6 +77,8 @@ async def play(ctx, url=None, position=0):
 @bot.command(pass_context = True)
 async def stop(ctx):
     if(ctx.voice_client):
+        state = get_state(ctx)
+        state.isPlaying = False
         await ctx.guild.voice_client.disconnect()
 
 @bot.command(pass_context = True, name='queue')
@@ -118,16 +130,36 @@ async def remove(ctx, position=0):
 
 @bot.command(pass_context = True)
 async def move(ctx, pos_from=None, pos_to=None):
+    if pos_from is None or pos_to is None:
+        await ctx.send("Invalid amount of arguments")
+        return
     state = get_state(ctx)
     qlen = len(state.queue)
     try:
         pos_from_int = int(pos_from)
         pos_to_int = int(pos_to)
-        if not (0 < pos_from_int < qlen) or not (0 < pos_to_int < qlen):
+        if not (0 < pos_from_int <= qlen) or not (0 < pos_to_int <= qlen):
             raise ValueError
     except ValueError:
         await ctx.send(f'\"{pos_from}\" or \"{pos_to}\" is not a valid integer')
         return
     await state.move(pos_from_int-1, pos_to_int-1)
+
+@bot.command(pass_context = True, name = 'helpme')
+async def help(ctx):
+    help_message = f"""
+    **INFO**
+        <arg> - mandatory argument
+        [arg] - optional argument
+
+    **COMMANDS**
+        - {command_character}play <link/name> [index] - default index at the end of the queue
+        - {command_character}skip - skip song
+        - {command_character}stop - drop queue and disconnect
+        - {command_character}queue [page] - lists 10 queue elements, defualt page = 1
+        - {command_character}remove <pos> - removes queue element at *pos* position
+        - {command_character}move <pos1> <pos2> - moves queue element from *pos1* to *pos2*
+    """
+    await ctx.send(help_message)
 
 bot.run(token=token, log_handler=handler)
