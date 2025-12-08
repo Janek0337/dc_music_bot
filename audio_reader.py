@@ -22,5 +22,5 @@ def play_music(url):
             return stream_url, title
             
         except Exception as e:
-            print(f"Błąd podczas pobierania strumienia: {e}")
+            print(f"Error while obtaning stream: {e}")
             return None, None

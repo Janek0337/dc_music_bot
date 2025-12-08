@@ -2,25 +2,24 @@ import audio_reader as AR
 import discord
 
 class ServerState:
-    def __init__(self, bot, ctx):
+    def __init__(self, bot):
         self.queue = []
         self.isPlaying = False
         self.bot = bot
-        self.ctx = ctx
 
-    async def add_song(self, url, index):
+    async def add_song(self, ctx, url, index):
         song_info = await self.bot.loop.run_in_executor(None, lambda: AR.play_music(url))
         if song_info is None:
-            await self.send_message("Cannot get information about given data")
+            await ctx.send("Cannot get information about given data")
             return
         self.queue.insert(index, song_info)
-        await self.send_message(f"Added to queue: **\"{song_info[1]}\"** at position **{index+1}**")
+        await ctx.send(f"Added to queue: **\"{song_info[1]}\"** at position **{index+1}**")
 
-    async def delete_song(self, position):
-        await self.send_message(f"Removed: **\"{self.queue[position][1]}\"**")
+    async def delete_song(self, ctx, position):
+        await ctx.send(f"Removed: **\"{self.queue[position][1]}\"**")
         self.queue.pop(position)
 
-    async def list_songs(self, page, pages_count):
+    async def list_songs(self, ctx, page, pages_count):
         start_idx = page*10
         end_idx = page*10 + 10
         
@@ -29,12 +28,14 @@ class ServerState:
         message = f"Current queue (page {page+1}/{pages_count}):\n"
         for i, song in enumerate(page_songs, start=start_idx+1):
             message += f"{i}. {song[1]}\n"
-        await self.send_message(message)
-        
-    async def send_message(self, message):
-        await self.ctx.send(message)
+        await ctx.send(message)
 
     async def play_next(self, ctx):
+        if not ctx.voice_client or not ctx.voice_client.is_connected():
+            self.isPlaying = False
+            self.queue = []
+            return
+        
         self.isPlaying = True
         if self.queue:
             song = self.queue.pop(0)
@@ -46,14 +47,15 @@ class ServerState:
                 'options': '-vn'
                 }
                 source = discord.FFmpegPCMAudio(stream_url, **ffmpeg_options)
-                await self.send_message(f"**Playing now: {name}**")
+                await ctx.send(f"**Playing now: {name}**")
                 ctx.voice_client.play(source, after=lambda e: self.bot.loop.create_task(self.play_next(ctx)))
             else:
-                print("Zły link")
+                await ctx.send("Invalid link")
+                await self.play_next(ctx)
         else:
             self.isPlaying = False
-            await self.send_message("**The end of the queue**")
+            await ctx.send("**The end of the queue**")
 
-    async def move(self, pos_from, pos_to):
-        await self.send_message(f"Moving **\"{self.queue[pos_from][1]}\"** to position **{pos_to+1}**")
+    async def move(self, ctx, pos_from, pos_to):
+        await ctx.send(f"Moving **\"{self.queue[pos_from][1]}\"** to position **{pos_to+1}**")
         self.queue.insert(pos_to, self.queue.pop(pos_from))
