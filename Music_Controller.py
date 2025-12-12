@@ -24,13 +24,13 @@ class Music_Controller(commands.Cog):
     @commands.command(name='play')
     async def play(self, ctx, *url):
         """
-        args: <url> [position] ; default position = 1
+        args: <url or description> [position] ; default position = 1
         """
         if(ctx.author.voice):
             voice_ch = ctx.message.author.voice.channel
             if not ctx.voice_client:
                 await voice_ch.connect()
-                
+
             state = self.get_state(ctx)
 
             if len(url) == 0:
@@ -145,6 +145,40 @@ class Music_Controller(commands.Cog):
             await ctx.send(f'\"{pos_from}\" or \"{pos_to}\" is not a valid integer')
             return
         await state.move(ctx, pos_from_int-1, pos_to_int-1)
+
+    @commands.command(name='pause')
+    async def pause(self, ctx):
+        """
+        no args
+        pauses streaming music
+        """
+        voice_client = ctx.voice_client
+        is_playing = voice_client.is_playing()
+        if voice_client and is_playing:
+            voice_client.pause()
+            await ctx.send("**Paused**")
+        elif not is_playing:
+            await ctx.send("Already paused")
+        else:
+            await ctx.send("Not in a voice channel")
+
+    @commands.command(name='resume')
+    async def resume(self, ctx):
+        """
+        no args
+        resumes paused music stream
+        """
+        voice_client = ctx.voice_client
+        is_paused = voice_client.is_paused()
+        
+        if voice_client and is_paused:
+            voice_client.resume()
+            await ctx.send("**Resumed**")
+        elif not is_paused:
+            await ctx.send("Already playing")
+        else:
+            await ctx.send("Not in a voice channel")
+
 
 async def setup(bot):
     await bot.add_cog(Music_Controller(bot))
