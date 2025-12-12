@@ -22,7 +22,7 @@ class Music_Controller(commands.Cog):
                 return
             
     @commands.command(name='play')
-    async def play(self, ctx, url=None, position=0):
+    async def play(self, ctx, *url):
         """
         args: <url> [position] ; default position = 1
         """
@@ -30,23 +30,29 @@ class Music_Controller(commands.Cog):
             voice_ch = ctx.message.author.voice.channel
             if not ctx.voice_client:
                 await voice_ch.connect()
-            if url is None:
+                
+            state = self.get_state(ctx)
+
+            if len(url) == 0:
                 await ctx.send(f"No arguments to command play, consider using \"{self.bot.command_character}help\"")
                 return
-            state = self.get_state(ctx)
+            elif len(url) == 1:
+                music_query = url[0]
+                position = len(state.queue)
+            else:
+                music_query = ' '.join(url[:-1])
+                position = url[-1]
+            
             try:
                 new_position = int(position)
-                if position == 0:
-                    new_position = len(state.queue)
-                elif new_position < 0 or new_position > len(state.queue):
+                if new_position <= 0 or new_position > len(state.queue):
                     raise ValueError
                 else:
                     new_position -= 1
             except ValueError:
-                await ctx.send(f'\"{position}\" is not a valid integer')
-                return
+                new_position = len(state.queue)
 
-            await state.add_song(ctx, url, new_position)
+            await state.add_song(ctx, music_query, new_position)
             if not state.isPlaying:
                 await state.play_next(ctx)
 
