@@ -179,6 +179,16 @@ class Music_Controller(commands.Cog):
         else:
             await ctx.send("Not in a voice channel")
 
+    @commands.command(name='shuffle')
+    async def shuffle(self, ctx):
+        """
+        no args
+        randomly shuffles queue
+        """
+        state = self.get_state(ctx)
+        await state.shuffle()
+        await ctx.send("**Shuffled queue**")
+
 
 async def setup(bot):
     await bot.add_cog(Music_Controller(bot))

@@ -1,5 +1,6 @@
 import audio_reader as AR
 import discord
+import random
 
 class ServerState:
     def __init__(self, bot):
@@ -59,3 +60,6 @@ class ServerState:
     async def move(self, ctx, pos_from, pos_to):
         await ctx.send(f"Moving **\"{self.queue[pos_from][1]}\"** to position **{pos_to+1}**")
         self.queue.insert(pos_to, self.queue.pop(pos_from))
+
+    async def shuffle(self):
+        random.shuffle(self.queue)
