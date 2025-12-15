@@ -189,6 +189,14 @@ class Music_Controller(commands.Cog):
         await state.shuffle()
         await ctx.send("**Shuffled queue**")
 
+    @commands.command(name="time")
+    async def time(self, ctx):
+        """
+        no args
+        display how much time of current song has passed
+        """
+        state = self.get_state(ctx)
+        await state.get_time(ctx)
 
 async def setup(bot):
     await bot.add_cog(Music_Controller(bot))

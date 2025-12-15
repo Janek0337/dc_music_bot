@@ -42,14 +42,16 @@ class ServerState:
             song = self.queue.pop(0)
             stream_url = song[0]
             name = song[1]
+            duration = song[2]
             if stream_url is not None:
                 ffmpeg_options = {
                 'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
                 'options': '-vn'
                 }
                 source = discord.FFmpegPCMAudio(stream_url, **ffmpeg_options)
+                timer_source = AR.TimerAudioSource(source, duration)
                 await ctx.send(f"**Playing now: {name}**")
-                ctx.voice_client.play(source, after=lambda e: self.bot.loop.create_task(self.play_next(ctx)))
+                ctx.voice_client.play(timer_source, after=lambda e: self.bot.loop.create_task(self.play_next(ctx)))
             else:
                 await ctx.send("Invalid link")
                 await self.play_next(ctx)
@@ -63,3 +65,30 @@ class ServerState:
 
     async def shuffle(self):
         random.shuffle(self.queue)
+
+    async def get_time(self, ctx):
+        voice_client = ctx.voice_client
+        if voice_client and voice_client.is_playing():
+            source = voice_client.source
+            if isinstance(source, discord.PCMVolumeTransformer):
+                source = source.original
+            if hasattr(source, "get_progress") and hasattr(source, "duration"):
+                secs, mins, hours = self.get_time_from_secs(source.get_progress())
+                max_seconds, max_minutes, max_hours = self.get_time_from_secs(source.duration)
+                await ctx.send("Currently playing time: **{hrs}{mins}{secs} / {max_hrs}{max_mins}{max_secs}**"
+                            .format(hrs=f"{hours:02}:" if hours > 0 else "", mins=f"{mins:02}:", secs=f"{secs:02}",
+                                    max_hrs=f"{max_hours:02}:" if max_hours > 0 else "", max_mins=f"{max_minutes:02}:", max_secs=f"{max_seconds:02}"))
+            else:
+                await ctx.send("Cannot read time")
+        else:
+            await ctx.send("Nothing to play")
+
+    def get_time_from_secs(self, all_seconds):
+        if all_seconds is None:
+            return (0,0,0)
+        
+        good_seconds = int(all_seconds)
+        secs = good_seconds % 60
+        hours = good_seconds // 3600
+        minutes = (good_seconds - hours * 3600) // 60
+        return (secs, minutes, hours)
