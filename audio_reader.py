@@ -1,6 +1,4 @@
 import yt_dlp
-import discord
-import time
 
 def play_music(url):
     ydl_opts = {
@@ -20,29 +18,9 @@ def play_music(url):
 
             stream_url = info['url'] 
             title = info['title']
-            duration = info['duration']
-
-            return (stream_url, title, duration)
+            
+            return stream_url, title
             
         except Exception as e:
             print(f"Error while obtaning stream: {e}")
-            return (None, None, None)
-        
-
-class TimerAudioSource(discord.AudioSource):
-    def __init__(self, original_source, duration):
-        self.original = original_source
-        self.count_20ms = 0
-        self.duration = duration
-
-    def read(self):
-        chunk = self.original.read()
-        if chunk:
-            self.count_20ms += 1
-        return chunk
-
-    def cleanup(self):
-        self.original.cleanup()
-
-    def get_progress(self):
-        return self.count_20ms * 0.02
+            return None, None
